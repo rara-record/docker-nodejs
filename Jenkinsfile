@@ -1,14 +1,15 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = "thanhlam2k4/nodejs_app"
+        DOCKER_IMAGE = "a52447879/nodejs_app"
         DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKER_CREDENTIALS = credentials('dockerhub_id')
     }
     stages {
         stage('Git Pulling Code') {
             steps {
                 echo 'Pulling code from GitHub.....'
-                git 'https://github.com/Thanhlam43k4/Dockerize-Application-with-Database-MySQL.git'
+                git 'https://github.com/rara-record/docker-nodejs.git'
             }
         }
 
@@ -21,6 +22,12 @@ pipeline {
 
         stage('Testing') {
             steps {
+                // 환경 확인
+                sh 'node --version'
+                sh 'npm --version'
+
+                // 의존성 설치
+                sh 'npm ci'
                 echo 'Testing stage .....'
             }
         }
@@ -36,16 +43,24 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
-                sshagent(['prod-server-ssh-key']) {
+                sshagent(['deploy_ssh_key']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no user@your-prod-server-ip "
-                            cd /opt/app &&
-                            docker compose -f docker-compose.prod.yml pull &&
-                            docker compose -f docker-compose.prod.yml up -d
+                        ssh -o StrictHostKeyChecking=no root@158.247.244.57 "
+                            docker login -u $DOCKER_CREDENTIALS_USR -p $DOCKER_CREDENTIALS_PSW &&
+                            cd /path/to/project &&
+                            docker-compose pull &&
+                            docker-compose up -d --remove-orphans
                         "
                     '''
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'rm -f .env'
+            sh 'docker system prune -f'
         }
     }
 }

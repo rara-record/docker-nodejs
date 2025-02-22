@@ -3,11 +3,17 @@ version: '3.8'
 services:
   app:
     container_name: application_con
-    image: thanhlam2k4/nodejs_app:latest
+    image: a52447879/nodejs_app:latest
     ports:
-      - 3000:3000
+      - '3000:3000'
     depends_on:
-      - mysql_server
+      mysql_server:
+        condition: service_healthy
+    environment:
+      - MYSQL_HOST=mysql_server
+      - MYSQL_DATABASE=test_db
+      - MYSQL_USER=thanhlam
+      - MYSQL_PASSWORD=secret
     restart: always
 
   mysql_server:
@@ -19,7 +25,15 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     volumes:
       - mysql_data:/var/lib/mysql
+      # 초기화 SQL 스크립트
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: always
 
 volumes:
   mysql_data:
+    driver: local

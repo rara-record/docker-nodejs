@@ -1,15 +1,6 @@
 pipeline {
     agent any
 
-    // 파라미터 정의 추가
-    parameters {
-        booleanParam(
-            defaultValue: false,
-            description: '서버 초기 설정이 필요한 경우 체크하세요 (Docker, Docker Compose 설치 등)',
-            name: 'INITIAL_SETUP'
-        )
-    }
-
     environment {
         DOCKER_IMAGE = "a52447879/nodejs_app"
         DOCKER_TAG = "${BUILD_NUMBER}"
@@ -22,7 +13,7 @@ pipeline {
         stage('Git Pulling Code') {
             steps {
                 echo 'Pulling code from GitHub.....'
-                git branch: 'main', url: 'https://github.com/rara-record/docker-nodejs.git'
+                git branch: 'main', url: 'https://github.com/rara-record/docker-nodejs.git', credentialsId: 'github_token'
             }
         }
 
@@ -62,34 +53,11 @@ pipeline {
             }
         }
 
-        stage('Initial Server Setup') {
-            when {
-                expression { params.INITIAL_SETUP == true }
-            }
-            steps {
-                sshagent(['deploy_ssh_key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no root@${DEPLOY_SERVER} "
-                            # Docker 설치
-                            curl -fsSL https://get.docker.com | sh
-
-                            # Docker Compose 설치
-                            curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                            chmod +x /usr/local/bin/docker-compose
-
-                            # 배포 디렉토리 생성
-                            mkdir -p ${DEPLOY_PATH}
-                        "
-                    '''
-                }
-            }
-        }
-
         stage('Setup Remote Server') {
             steps {
                 sshagent(['deploy_ssh_key']) {
                     sh '''
-                        # 배포 디렉토리 생성 (없는 경우)
+                        # 배포 디렉토리 생성
                         ssh -o StrictHostKeyChecking=no root@${DEPLOY_SERVER} "mkdir -p ${DEPLOY_PATH}"
                     '''
                 }

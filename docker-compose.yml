@@ -10,19 +10,19 @@ services:
       mysql_server:
         condition: service_healthy
     environment:
-      - MYSQL_HOST=mysql_server
-      - MYSQL_DATABASE=test_db
-      - MYSQL_USER=thanhlam
-      - MYSQL_PASSWORD=secret
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     restart: always
 
   mysql_server:
     image: mysql:8.0
     environment:
-      - MYSQL_DATABASE=test_db
-      - MYSQL_USER=thanhlam
-      - MYSQL_PASSWORD=secret
-      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       # 초기화 SQL 스크립트
